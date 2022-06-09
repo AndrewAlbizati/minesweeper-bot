@@ -19,7 +19,7 @@ public class Tile {
     }
 
     private boolean hasBomb = false;
-    public boolean getHasBomb() {
+    public boolean hasBomb() {
         return hasBomb;
     }
     public void setHasBomb(boolean hasBomb) {

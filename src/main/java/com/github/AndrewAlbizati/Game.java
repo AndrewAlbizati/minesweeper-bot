@@ -1,9 +1,12 @@
 package com.github.AndrewAlbizati;
 
+import org.javacord.api.entity.message.Message;
+
 import java.util.Random;
 
 public class Game {
     private final Tile[][] tiles;
+    private Message message;
 
     private final int rows;
     private final int cols;
@@ -16,31 +19,39 @@ public class Game {
 
     /**
      * Sets up a game of Minesweeper that is ready to be started by the start() method.
-     * @param difficulty The difficulty that the game will be set to. Changes the size of the board and amount of bombs.
      */
-    public Game(Difficulties difficulty) {
-        this.rows = difficulty.rows;
-        this.cols = difficulty.columns;
-        this.mines = difficulty.mines;
+    public Game() {
+        this.rows = 9;
+        this.cols = 9;
+        this.mines = 10;
 
         tiles = new Tile[rows][cols];
 
-
-        // Create buttons
+        // Create tiles
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                Tile t = new Tile(r, c);
-
-                tiles[r][c] = t;
+                tiles[r][c] = new Tile(r, c);
             }
         }
+        generateBoard();
+    }
+
+    public Message getMessage() {
+        return message;
+    }
+
+    public void setMessage(Message message) {
+        this.message = message;
+    }
+
+    public long getStartTime() {
+        return startTime;
     }
 
     /**
-     * Starts the timer and shows the game to the player.
+     * Starts the timer.
      */
     public void start() {
-        generateBoard();
         startTime = System.currentTimeMillis();
     }
 
@@ -67,7 +78,7 @@ public class Game {
             int x = rand.nextInt(rows);
             int y = rand.nextInt(cols);
 
-            if (tiles[x][y].getHasBomb()) {
+            if (tiles[x][y].hasBomb()) {
                 continue;
             }
             tiles[x][y].setHasBomb(true);
@@ -78,7 +89,7 @@ public class Game {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 Tile tile = tiles[r][c];
-                if (tile.getHasBomb()) {
+                if (tile.hasBomb()) {
                     continue;
                 }
 
@@ -87,20 +98,20 @@ public class Game {
                 // Get tiles above
                 if (r > 0) {
                     // Top middle tile
-                    if (tiles[r - 1][c].getHasBomb()) {
+                    if (tiles[r - 1][c].hasBomb()) {
                         adjacentBombs++;
                     }
 
                     // Top left tile
                     if (c > 0) {
-                        if (tiles[r - 1][c - 1].getHasBomb()) {
+                        if (tiles[r - 1][c - 1].hasBomb()) {
                             adjacentBombs++;
                         }
                     }
 
                     // Top right tile
                     if (c < cols - 1) {
-                        if (tiles[r - 1][c + 1].getHasBomb()) {
+                        if (tiles[r - 1][c + 1].hasBomb()) {
                             adjacentBombs++;
                         }
                     }
@@ -109,20 +120,20 @@ public class Game {
                 // Get tiles below
                 if (r < rows - 1) {
                     // Bottom middle tile
-                    if (tiles[r + 1][c].getHasBomb()) {
+                    if (tiles[r + 1][c].hasBomb()) {
                         adjacentBombs++;
                     }
 
                     // Bottom left tile
                     if (c > 0) {
-                        if (tiles[r + 1][c - 1].getHasBomb()) {
+                        if (tiles[r + 1][c - 1].hasBomb()) {
                             adjacentBombs++;
                         }
                     }
 
                     // Bottom right tile
                     if (c < cols - 1) {
-                        if (tiles[r + 1][c + 1].getHasBomb()) {
+                        if (tiles[r + 1][c + 1].hasBomb()) {
                             adjacentBombs++;
                         }
                     }
@@ -130,14 +141,14 @@ public class Game {
 
                 // Get left tile
                 if (c > 0) {
-                    if (tiles[r][c - 1].getHasBomb()) {
+                    if (tiles[r][c - 1].hasBomb()) {
                         adjacentBombs++;
                     }
                 }
 
                 // Get right tile
                 if (c < cols - 1) {
-                    if (tiles[r][c + 1].getHasBomb()) {
+                    if (tiles[r][c + 1].hasBomb()) {
                         adjacentBombs++;
                     }
                 }
@@ -148,31 +159,35 @@ public class Game {
     }
 
     /**
-     * Handles when a user right-clicks on a tile. It can place a flag or remove a flag.
-     * @param tile The tile that was right-clicked on.
+     * Handles when a user add a flag on a tile. It can place a flag or remove a flag.
+     * @param row The row of the tile that will be flagged.
+     * @param col The column of the tile that will be flagged.
      */
-    private void onRightClick(Tile tile) {
+    public void addFlag(int row, int col) {
+        Tile tile = tiles[row][col];
         if (tile.getRevealed()) {
             return;
         }
 
         // Remove flag
         if (tile.getHasFlag()) {
-            tile.setText("");
+            tile.setText(":white_medium_square:");
             tile.setHasFlag(false);
         // Place flag
         } else {
-            tile.setText("F");
+            tile.setText(":triangular_flag_on_post:");
             tile.setHasFlag(true);
         }
         refreshBoard();
     }
 
     /**
-     * Handles when a player left-clicks on a tile. It can win the game, end the game, or reveal tiles.
-     * @param tile The tile that was left-clicked on.
+     * Handles when a player clicks on a tile. It can win the game, end the game, or reveal tiles.
+     * @param row The row of the tile to be clicked on.
+     * @param col The column of the tile to be clicked on.
      */
-    private void onLeftClick(Tile tile) {
+    public void onClick(int row, int col) {
+        Tile tile = tiles[row][col];
         if (tile.getHasFlag()) {
             return; // Ignore when a player left-clicks a tile with a flag
         }
@@ -180,17 +195,17 @@ public class Game {
         // Generate new boards until the first tile revealed is a blank space
         // Prevents game from instantly ending
         if (!gameStarted) {
-            if (tile.getHasBomb()) {
+            if (tile.hasBomb()) {
                 generateBoard();
-                onLeftClick(tile);
+                onClick(tile.getRow(), tile.getColumn());
             } else if (tile.getNumber() != 0) {
                 generateBoard();
-                onLeftClick(tile);
+                onClick(tile.getRow(), tile.getColumn());
             }
             gameStarted = true;
         }
 
-        if (tile.getHasBomb()) {
+        if (tile.hasBomb()) {
             revealAllTiles();
             gameEnded = true;
             return;
@@ -316,9 +331,9 @@ public class Game {
 
     /**
      * Refreshes a board when a player changes any tiles.
-     * Color tiles, adds "F" to flagged tiles.
+     * Color tiles, adds a flag to flagged tiles.
      */
-    private void refreshBoard() {
+    public void refreshBoard() {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 Tile tile = tiles[r][c];
@@ -336,9 +351,11 @@ public class Game {
                             case 9 -> ":nine:";
                             default -> tile.getText();
                         });
+                    } else {
+                        tile.setText(":black_medium_square:");
                     }
                 } else if (tile.getHasFlag()) {
-                    tile.setText("F");
+                    tile.setText(":triangular_flag_on_post:");
                 }
             }
         }
@@ -348,14 +365,14 @@ public class Game {
      * Determines if the current board has been completed.
      * @return if all normal tiles have been revealed.
      */
-    private boolean hasWin() {
+    public boolean hasWin() {
         boolean flag = true;
         loop:
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 Tile tile = tiles[r][c];
                 // Detect if a normal tile hasn't been revealed
-                if (!tile.getHasBomb() && !tile.getRevealed()) {
+                if (!tile.hasBomb() && !tile.getRevealed()) {
                     flag = false;
                     break loop;
                 }
@@ -363,6 +380,10 @@ public class Game {
         }
 
         return flag;
+    }
+
+    public boolean hasEnded() {
+        return gameEnded;
     }
 
     /**
@@ -375,12 +396,13 @@ public class Game {
                 Tile tile = tiles[r][c];
                 tile.setRevealed(true);
 
-                if (tile.getHasBomb()) {
+                if (tile.hasBomb()) {
                     tile.setText(":b:");
                     continue;
                 }
 
                 if (tile.getNumber() == 0) {
+                    tile.setText(":black_medium_square:");
                     continue;
                 }
 
@@ -401,7 +423,7 @@ public class Game {
     }
 
     public String toString() {
-        String[] numbers = {":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:", ":keycap_ten:"};
+        String[] numbers = {":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"};
         String[] letters = {
                 ":regional_indicator_a:",
                 ":regional_indicator_b:",
@@ -411,24 +433,7 @@ public class Game {
                 ":regional_indicator_f:",
                 ":regional_indicator_g:",
                 ":regional_indicator_h:",
-                ":regional_indicator_i:",
-                ":regional_indicator_j:",
-                ":regional_indicator_k:",
-                ":regional_indicator_l:",
-                ":regional_indicator_m:",
-                ":regional_indicator_n:",
-                ":regional_indicator_o:",
-                ":regional_indicator_p:",
-                ":regional_indicator_q:",
-                ":regional_indicator_r:",
-                ":regional_indicator_s:",
-                ":regional_indicator_t:",
-                ":regional_indicator_u:",
-                ":regional_indicator_v:",
-                ":regional_indicator_w:",
-                ":regional_indicator_x:",
-                ":regional_indicator_y:",
-                ":regional_indicator_z:"};
+                ":regional_indicator_i:"};
 
         StringBuilder sb = new StringBuilder();
         sb.append(":black_medium_square: ");
@@ -448,7 +453,6 @@ public class Game {
             }
             sb.append("\n");
         }
-
 
         return sb.toString();
     }
