@@ -69,14 +69,12 @@ public class Game {
             }
         }
 
-        Random rand = new Random();
-
-
         // Generate bombs
         int minesOnBoard = 0;
         while (minesOnBoard < mines) {
-            int x = rand.nextInt(rows);
-            int y = rand.nextInt(cols);
+
+            int x = (int) (Math.random() * rows);
+            int y = (int) (Math.random() * cols);
 
             if (tiles[x][y].hasBomb()) {
                 continue;
@@ -205,6 +203,7 @@ public class Game {
             gameStarted = true;
         }
 
+        // Clicked on a tile with a bomb
         if (tile.hasBomb()) {
             revealAllTiles();
             gameEnded = true;

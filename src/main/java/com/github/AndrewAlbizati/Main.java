@@ -40,6 +40,7 @@ public class Main {
             return;
         }
 
+        // Create a new bot
         Bot bot = new Bot(token);
         bot.start();
     }
