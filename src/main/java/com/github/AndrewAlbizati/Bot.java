@@ -12,6 +12,7 @@ import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 import org.javacord.api.interaction.callback.InteractionCallbackDataFlag;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.List;
 
@@ -69,6 +70,7 @@ public class Bot {
                     game.start();
 
                     eb.setTitle("Minesweeper");
+                    eb.setColor(Color.GRAY);
                     eb.setFooter(interaction.getUser().getDiscriminatedName(), interaction.getUser().getAvatar());
                     eb.setDescription(game.toString());
 
@@ -204,12 +206,15 @@ public class Bot {
                     EmbedBuilder eb = new EmbedBuilder();
                     if (game.hasEnded()) {
                         games.remove(interaction.getUser().getId());
-                        eb.addField("You lose!", "Time: " + ((System.currentTimeMillis() - game.getStartTime()) / 1000) + " seconds");
+                        eb.addField("You lose!", "Time: " + formatTime(System.currentTimeMillis() - game.getStartTime()));
+                        eb.setColor(Color.RED);
                     } else if (game.hasWin()) {
                         games.remove(interaction.getUser().getId());
-                        eb.addField("You win!", "Time: " + ((System.currentTimeMillis() - game.getStartTime()) / 1000) + " seconds");
+                        eb.addField("You win!", "Time: " + formatTime(System.currentTimeMillis() - game.getStartTime()));
+                        eb.setColor(Color.GREEN);
                     } else {
                         game.refreshBoard();
+                        eb.setColor(Color.GRAY);
                     }
 
                     eb.setTitle("Minesweeper");
@@ -224,5 +229,41 @@ public class Bot {
                 }
             }
         });
+    }
+
+    private static String formatTime(long duration) {
+        StringBuilder sb = new StringBuilder();
+
+        long second = (duration / 1000) % 60;
+        long minute = (duration / (1000 * 60)) % 60;
+        long hour = (duration / (1000 * 60 * 60)) % 24;
+
+        // Hours
+        if (hour > 0) {
+            sb.append(hour);
+            sb.append(hour == 1 ? " hour" : " hours");
+
+            if (minute > 0 || second > 0) {
+                sb.append(", ");
+            }
+        }
+
+        // Minutes
+        if (minute > 0) {
+            sb.append(minute);
+            sb.append(minute == 1 ? " minute" : " minutes");
+
+            if (second > 0) {
+                sb.append(", ");
+            }
+        }
+
+        // Seconds
+        if (second > 0) {
+            sb.append(second);
+            sb.append(second == 1 ? " second" : " seconds");
+        }
+
+        return sb.toString();
     }
 }
